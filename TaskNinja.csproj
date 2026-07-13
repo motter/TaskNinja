@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>TaskNinja</RootNamespace>
+    <AssemblyName>TaskNinja</AssemblyName>
+    <Version>1.1.1</Version>
+    <ApplicationIcon>Resources\tasknin.ico</ApplicationIcon>
+
+    <!-- Single-file self-contained publishing settings.
+         Matches the same recipe ClipNinja uses so users get one .exe. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\tasknin.ico" Condition="Exists('Resources\tasknin.ico')" />
+    <EmbeddedResource Include="Resources\tasknin.ico" Condition="Exists('Resources\tasknin.ico')">
+      <LogicalName>TaskNinja.Resources.tasknin.ico</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
