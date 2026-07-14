@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.0] — 2026-07-14
+
+### Fixed — task editor crushed the Notes box to nothing
+Notes was the only Star-sized row in the editor's layout, so every
+Auto row above it — activity log, checklist, attachments — claimed
+its space first. On a task with a few activity entries and some
+attachments, Notes got ZERO height and vanished; the only way to see
+it was to manually drag the window bigger.
+
+Now: the whole form sizes naturally and lives in a **ScrollViewer**,
+so nothing can be squeezed out of existence — if the content doesn't
+fit, you scroll. The Notes box holds a guaranteed minimum height
+(and scrolls internally once you type past it). Save/Cancel are
+pinned below the scroll region so they're always reachable without
+scrolling to the bottom. Default window is a bit taller too.
+
+### Added — click a task in the weekly report to open it
+Task rows in the summary dashboard (both the completed-this-week
+list and the drill-down lists) are now clickable: hover highlights
+the row, click opens that task in the detail editor. No more
+hunting for it in the main list.
+
 ## [1.1.1] — 2026-07-13
 
 ### Fixed / hardened — self-update reliability (parity with ClipNinja v2.8.1)

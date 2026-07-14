@@ -112,7 +112,7 @@ public partial class MainWindow : Window
                     // forward — useful confirmation that the click was
                     // received).
                     ShowWindowFromTray();
-                    WeeklyReportDialog.Show(this, _vm);
+                    WeeklyReportDialog.Show(this, _vm, OpenEditor);
                 })),
                 onCheckUpdates: () => Dispatcher.BeginInvoke(new Action(OnTrayCheckUpdates)));
         }
@@ -504,7 +504,7 @@ public partial class MainWindow : Window
         {
             // Ctrl+R → weekly activity report. Also reachable from the
             // tray menu's "Weekly report" item.
-            WeeklyReportDialog.Show(this, _vm);
+            WeeklyReportDialog.Show(this, _vm, OpenEditor);
             e.Handled = true;
         }
         else if (e.Key == Key.D && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
@@ -811,7 +811,7 @@ public partial class MainWindow : Window
 
     private void OnShowWeeklyReport_Click(object sender, RoutedEventArgs e)
     {
-        WeeklyReportDialog.Show(this, _vm);
+        WeeklyReportDialog.Show(this, _vm, OpenEditor);
     }
 
     private void OnNotificationSettings_Click(object sender, RoutedEventArgs e)

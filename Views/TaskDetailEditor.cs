@@ -32,7 +32,7 @@ public class TaskDetailEditor
         {
             Title = "Edit task",
             Width = 500,
-            Height = 600,
+            Height = 680,   // roomier default; outer ScrollViewer covers overflow
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = owner,
             ShowInTaskbar = false,
@@ -55,7 +55,15 @@ public class TaskDetailEditor
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 2: State picker
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 3: Due + Person
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 4: Recurrence + Start
-        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });  // 5: Body
+        // 5: Body — Auto, NOT Star. It used to be the only Star row, which
+        // meant every Auto row above it (activity log, checklist,
+        // attachments) took its space first and the notes box got the
+        // remainder — which for a task with a few activity entries and
+        // attachments was ZERO. The box vanished entirely and the only
+        // recourse was manually dragging the window bigger. Now the form
+        // sizes naturally and the whole dialog scrolls (see the
+        // ScrollViewer below); the notes box holds its MinHeight.
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 5: Body
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 6: Subtasks (NEW v1.0.22)
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 7: Attachments
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // 8: Buttons
@@ -329,7 +337,7 @@ public class TaskDetailEditor
         // overflows.
         var bodyCol = new Grid();
         bodyCol.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // label
-        bodyCol.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });  // textbox
+        bodyCol.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });   // textbox
         var bodyLabel = SmallLabel("Notes / body — URLs auto-link in preview. Paste images with Ctrl+V.");
         Grid.SetRow(bodyLabel, 0);
         bodyCol.Children.Add(bodyLabel);
@@ -347,7 +355,12 @@ public class TaskDetailEditor
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalAlignment = VerticalAlignment.Stretch,
-            MinHeight = 120,
+            // Guaranteed floor: the notes box is always at least this
+            // tall and scrolls internally past it. Combined with the
+            // outer ScrollViewer, nothing in this dialog can ever be
+            // compressed to invisibility.
+            MinHeight = 130,
+            MaxHeight = 320,
         };
         Grid.SetRow(bodyBox, 1);
 
@@ -567,10 +580,28 @@ public class TaskDetailEditor
         Grid.SetColumn(btnRow, 1);
         footer.Children.Add(btnRow);
 
-        Grid.SetRow(footer, 8);
-        root.Children.Add(footer);
+        // Footer (lifecycle + Save/Cancel) is PINNED outside the scroll
+        // region — Save must always be reachable without scrolling to
+        // the bottom of a long task.
+        var outer = new Grid();
+        outer.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        outer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        dialog.Content = root;
+        var scroller = new ScrollViewer
+        {
+            Content = root,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Padding = new Thickness(0, 0, 4, 0),   // room for the scrollbar
+        };
+        Grid.SetRow(scroller, 0);
+        outer.Children.Add(scroller);
+
+        Grid.SetRow(footer, 1);
+        footer.Margin = new Thickness(12, 4, 12, 12);   // matches root grid margin
+        outer.Children.Add(footer);
+
+        dialog.Content = outer;
         dialog.Loaded += (_, _) => titleBox.Focus();
         dialog.ShowDialog();
         return saved;

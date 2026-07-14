@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;   // Cursors (clickable task rows)
 using System.Windows.Media;
 using TaskNinja.Models;
 using TaskNinja.ViewModels;
@@ -28,8 +29,18 @@ public class WeeklyReportDialog
 {
     private static Window? _currentWindow;
 
-    public static void Show(Window owner, MainViewModel vm)
+    /// <summary>Set by Show() for the duration of the dialog: opens a
+    /// task in the editor. The row builders are static helpers nested
+    /// several layers down, so a field beats threading a callback
+    /// through five signatures. Cleared when the dialog closes.</summary>
+    private static Action<TaskItem>? _openTask;
+
+    /// <param name="onOpenTask">Called when a task row is clicked —
+    /// opens that task in the detail editor. Optional; rows are
+    /// non-interactive if omitted.</param>
+    public static void Show(Window owner, MainViewModel vm, Action<TaskItem>? onOpenTask = null)
     {
+        _openTask = onOpenTask;
         if (_currentWindow is not null)
         {
             _currentWindow.Activate();
@@ -225,6 +236,9 @@ public class WeeklyReportDialog
         RebuildBody();
 
         dialog.Content = chrome;
+        // Modeless dialog — clear the callback when it closes so a stale
+        // closure can't outlive the window.
+        dialog.Closed += (_, _) => _openTask = null;
         dialog.Show();
     }
 
@@ -612,6 +626,7 @@ public class WeeklyReportDialog
         foreach (var (task, completedAt) in stats.CompletedThisWeek.OrderBy(c => c.completedAt))
         {
             var row = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+            MakeRowClickable(row, task);
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -752,11 +767,11 @@ public class WeeklyReportDialog
     }
 
     /// <summary>One row in the drill list: glyph + title + timestamp.
-    /// Compact, hover-cursor on the title (in case we want to wire
-    /// click-to-open-editor later).</summary>
+    /// Clicking the row opens the task in the detail editor.</summary>
     private static FrameworkElement BuildDrillRow(TaskItem task, DateTime timestamp, string timestampLabel)
     {
         var row = new Grid { Margin = new Thickness(0, 3, 0, 3) };
+        MakeRowClickable(row, task);
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -938,5 +953,20 @@ public class WeeklyReportDialog
             return t.CompletedAt is { } c && c <= when;
         }
         return false;
+    }
+
+    /// <summary>Make a task row behave like a link: hand cursor, hover
+    /// tint, click opens the task in the editor. Transparent background
+    /// so the whole row width is hit-testable, not just the glyph+text.</summary>
+    private static void MakeRowClickable(Grid row, TaskItem task)
+    {
+        if (_openTask is null) return;
+        row.Background = Brushes.Transparent;
+        row.Cursor = Cursors.Hand;
+        row.ToolTip = "Click to open this task";
+        var hover = (Brush)Application.Current.Resources["PanelBrush"];
+        row.MouseEnter += (_, _) => row.Background = hover;
+        row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
+        row.MouseLeftButtonUp += (_, _) => _openTask?.Invoke(task);
     }
 }
