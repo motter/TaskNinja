@@ -89,13 +89,13 @@ public class MainViewModel : INotifyPropertyChanged
     /// <summary>Every tag in use across all non-archived tasks, sorted
     /// by frequency then alphabetically — powers the tag picker.</summary>
     public List<string> AllTagsInUse =>
-        Tasks.Where(t => !t.IsArchived)
-             .SelectMany(t => t.AllTags)
-             .GroupBy(x => x)
-             .OrderByDescending(g => g.Count())
-             .ThenBy(g => g.Key)
-             .Select(g => g.Key)
-             .ToList();
+        AllTasks.Where(t => !t.IsArchived)
+                .SelectMany(t => t.AllTags)
+                .GroupBy(x => x)
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key)
+                .Select(g => g.Key)
+                .ToList();
     /// <summary>Named filter: "All" / "Today" / "ThisWeek" / "Overdue" /
     /// "NoDate" / "Done". Drives RebuildVisible's section logic.</summary>
     public string ActiveFilter

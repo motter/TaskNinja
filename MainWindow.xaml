@@ -151,9 +151,20 @@
                                             Cursor="Hand"
                                             ToolTip="Filter to this tag (all buckets)"
                                             MouseLeftButtonDown="OnTagChip_Click">
-                                        <TextBlock Text="{Binding StringFormat=#{0}}"
-                                                   FontSize="10"
-                                                   Foreground="{StaticResource SkyBrush}" />
+                                        <!-- "#" + tag as two TextBlocks rather than
+                                             StringFormat=#{0}: inside a markup
+                                             extension the XAML parser reads the
+                                             inner {0} as a NESTED extension and
+                                             fails to compile. Two blocks, zero
+                                             cleverness. -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="#"
+                                                       FontSize="10"
+                                                       Foreground="{StaticResource SkyBrush}" />
+                                            <TextBlock Text="{Binding}"
+                                                       FontSize="10"
+                                                       Foreground="{StaticResource SkyBrush}" />
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

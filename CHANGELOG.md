@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.1] — 2026-07-14
+
+### Fixed — v1.3.0 failed to build (no release was produced)
+Two mistakes in the v1.3.0 tag, both mine:
+- `AllTagsInUse` referenced a `Tasks` collection that doesn't exist —
+  the view model's collection is `AllTasks`.
+- The tag chip used `StringFormat=#{0}`; inside a XAML markup
+  extension the inner `{0}` is parsed as a NESTED extension and fails
+  to compile. Replaced with two plain TextBlocks.
+
+v1.3.0's features (important flag, tags + tag filtering, visible
+attachment removal) ship here.
+
 ## [1.3.0] — 2026-07-14
 
 ### Added — mark tasks important
