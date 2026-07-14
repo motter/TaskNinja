@@ -60,7 +60,7 @@ public class TaskItem : INotifyPropertyChanged
     public string Title
     {
         get => _title;
-        set { _title = value; Notify(); Notify(nameof(HasContent)); Notify(nameof(ParsedTags)); }
+        set { _title = value; Notify(); Notify(nameof(HasContent)); Notify(nameof(ParsedTags)); Notify(nameof(AllTags)); Notify(nameof(HasTags)); }
     }
 
     private string _body = "";
@@ -182,6 +182,47 @@ public class TaskItem : INotifyPropertyChanged
     public int RecurrenceInterval { get; set; } = 1;
 
     public bool IsArchived { get; set; }
+
+    private bool _isImportant;
+    /// <summary>Flagged as important. Drives the row's amber tint, the
+    /// ❗ indicator, and (outside Manual sort) floats the task to the
+    /// top of its group.</summary>
+    public bool IsImportant
+    {
+        get => _isImportant;
+        set { if (_isImportant == value) return; _isImportant = value; Notify(); }
+    }
+
+    private List<string> _tags = new();
+    /// <summary>Explicit tags, set in the editor. Stored lowercase and
+    /// deduped. These MERGE with inline #hashtags typed into the title
+    /// (see AllTags) — the hashtag syntax predates this field and still
+    /// works, so no migration and no second source of truth to reconcile
+    /// at read time.</summary>
+    public List<string> Tags
+    {
+        get => _tags;
+        set
+        {
+            _tags = (value ?? new List<string>())
+                .Select(x => (x ?? "").Trim().TrimStart('#').ToLowerInvariant())
+                .Where(x => x.Length > 0)
+                .Distinct()
+                .Take(8)
+                .ToList();
+            Notify();
+            Notify(nameof(AllTags));
+            Notify(nameof(HasTags));
+        }
+    }
+
+    /// <summary>Every tag on the task: explicit Tags plus any inline
+    /// #hashtags in the title. This is what the UI shows and what search
+    /// and the tag filter match against.</summary>
+    public List<string> AllTags =>
+        _tags.Concat(ParsedTags).Distinct().Take(8).ToList();
+
+    public bool HasTags => AllTags.Count > 0;
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? CompletedAt { get; set; }
 

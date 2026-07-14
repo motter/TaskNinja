@@ -20,3 +20,17 @@ public class StringToVisConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotImplementedException();
 }
+
+/// <summary>
+/// Visibility converter: true → Visible, false → Collapsed. Used by the
+/// ❗ important marker and the tag-chip strip, both of which should take
+/// up ZERO space (not just be invisible) when they don't apply.
+/// </summary>
+public class BoolToVisConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotImplementedException();
+}

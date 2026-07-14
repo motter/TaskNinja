@@ -10,6 +10,7 @@
                 <ResourceDictionary Source="Resources/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <local:StringToVisConverter x:Key="StringToVisConverter" />
+            <local:BoolToVisConverter x:Key="BoolToVis" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

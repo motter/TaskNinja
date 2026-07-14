@@ -40,6 +40,14 @@
                     <Style TargetType="Border">
                         <Setter Property="Background" Value="{StaticResource BgBrush}" />
                         <Style.Triggers>
+                            <!-- Important: warm tint + amber left edge. Declared
+                                 BEFORE the hover trigger so hover still wins on
+                                 mouse-over (last matching trigger applies). -->
+                            <DataTrigger Binding="{Binding IsImportant}" Value="True">
+                                <Setter Property="Background" Value="#2E2418" />
+                                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter Property="BorderThickness" Value="3,0,0,1" />
+                            </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="{StaticResource PanelBrush}" />
                             </Trigger>
@@ -58,6 +66,7 @@
                         </MenuItem>
                         <Separator />
                         <MenuItem Header="✏️  Edit task…"        Click="OnTaskMenu_Edit" />
+                        <MenuItem Header="❗ Toggle important"   Click="OnTaskMenu_ToggleImportant" />
                         <MenuItem Header="📅 Set due date…"     Click="OnTaskMenu_SetDueDate" />
                         <MenuItem Header="👤 Set responsible…"  Click="OnTaskMenu_SetPerson" />
                         <MenuItem Header="🔁 Set recurrence…"   Click="OnTaskMenu_SetRecurrence" />
@@ -103,12 +112,52 @@
 
                     <!-- Title — strikethrough when Done -->
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock x:Name="TitleBlock"
-                                   Text="{Binding Title}"
-                                   Foreground="{StaticResource TextBrush}"
-                                   FontSize="14"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Important marker. Visibility bound so it takes
+                                 no space at all on ordinary tasks. -->
+                            <TextBlock x:Name="ImportantMark"
+                                       Text="❗"
+                                       FontSize="13"
+                                       Margin="0,0,4,0"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Important"
+                                       Visibility="{Binding IsImportant, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock x:Name="TitleBlock"
+                                       Text="{Binding Title}"
+                                       Foreground="{StaticResource TextBrush}"
+                                       FontSize="14"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <!-- Tag chips — click one to filter the whole list to
+                             that tag (across every bucket). -->
+                        <ItemsControl x:Name="TagChips"
+                                      ItemsSource="{Binding AllTags}"
+                                      Margin="0,3,0,0"
+                                      Visibility="{Binding HasTags, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource PanelBrush}"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="6,1"
+                                            Margin="0,0,4,2"
+                                            Cursor="Hand"
+                                            ToolTip="Filter to this tag (all buckets)"
+                                            MouseLeftButtonDown="OnTagChip_Click">
+                                        <TextBlock Text="{Binding StringFormat=#{0}}"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource SkyBrush}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                         <!-- Bucket name shown subtly when viewing "All" -->
                         <TextBlock x:Name="BucketHint"
                                    Visibility="Collapsed"
@@ -527,6 +576,25 @@
                         <RadioButton x:Name="FilterScheduled" Style="{StaticResource FilterPillStyle}" Content="Scheduled" Checked="OnFilter_Changed" Tag="Scheduled"
                                      ToolTip="Tasks waiting in the wings — recurring spawns deferred until closer to due, plus anything manually deferred via 'Don't show until'." />
                         <RadioButton x:Name="FilterDone"      Style="{StaticResource FilterPillStyle}" Content="Done"      Checked="OnFilter_Changed" Tag="Done" />
+                        <!-- Active tag filter — appears inline with the pills
+                             when a tag chip is clicked. Click to clear. Lives
+                             in the same WrapPanel so it wraps with them
+                             instead of stealing a whole row. -->
+                        <Border x:Name="ActiveTagChip"
+                                Background="{StaticResource AccentBrush}"
+                                CornerRadius="10"
+                                Padding="8,3"
+                                Margin="4,3,4,3"
+                                Cursor="Hand"
+                                VerticalAlignment="Center"
+                                ToolTip="Clear tag filter"
+                                MouseLeftButtonDown="OnClearTag_Click"
+                                Visibility="{Binding HasActiveTag, Converter={StaticResource BoolToVis}}">
+                            <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#1A1712">
+                                <Run Text="{Binding ActiveTagLabel, Mode=OneWay}" />
+                                <Run Text="  ✕" />
+                            </TextBlock>
+                        </Border>
                     </WrapPanel>
                     <!-- Sort mode toggle — cycles "Due date" ↔ "Manual".
                          Manual mode is auto-engaged on first drag-and-drop;

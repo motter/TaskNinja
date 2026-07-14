@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.3.0] — 2026-07-14
+
+### Added — mark tasks important
+- Right-click a task → **❗ Toggle important**, or tick the checkbox
+  in the editor (next to Status).
+- Important tasks get a warm amber tint, an amber left edge, and an
+  ❗ before the title — visible at a glance in any list.
+- They also float to the top of the active group in date sort. In
+  **Manual** sort they stay put: you arranged that order by hand and
+  the app shouldn't fight you. The tint and ❗ still mark them.
+
+### Added — tags, and filtering by them
+- Tasks have a **Tags** field in the editor (comma-separated). Inline
+  **#hashtags** typed into the title still work and merge with them —
+  both styles feed one list, no second source of truth.
+- Tags show as chips under the task title. **Click a chip to filter
+  the whole list to that tag** — across every bucket, because a tag
+  like "audit" is a cross-cutting concern and intersecting it with
+  the bucket filter would usually return nothing and look broken.
+  (Selecting a tag switches the bucket dropdown to "All buckets" so
+  what you see matches what's filtered.)
+- The active tag appears as an amber chip in the filter row; click it
+  to clear. Tags are also matched by the normal search box.
+
+### Added — remove attachments without guessing
+- Attachment thumbnails now carry a visible **✕ badge**. Removal used
+  to be right-click-only, i.e. a destructive action nobody could
+  find. Right-click still works; the tooltip now mentions both.
+
 ## [1.2.0] — 2026-07-14
 
 ### Fixed — task editor crushed the Notes box to nothing

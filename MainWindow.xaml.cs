@@ -1347,6 +1347,39 @@ public partial class MainWindow : Window
         _vm.OnTaskMutated();
     }
 
+    /// <summary>Context menu → toggle the important flag.</summary>
+    private void OnTaskMenu_ToggleImportant(object sender, RoutedEventArgs e)
+    {
+        var task = GetTaskFrom(sender);
+        if (task is null) return;
+        task.IsImportant = !task.IsImportant;
+        _vm.StatusText = task.IsImportant ? "❗ Marked important" : "Importance cleared";
+        _vm.RebuildVisible();   // re-sort: important floats up in date sort
+        _vm.ScheduleSave();
+    }
+
+    /// <summary>Click a tag chip on a row → filter the whole list to that
+    /// tag. Deliberately clears the bucket filter: tags are cross-cutting
+    /// (an "audit" tag spans buckets), and intersecting the two would
+    /// usually return nothing and look broken.</summary>
+    private void OnTagChip_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement fe || fe.DataContext is not string tag) return;
+        e.Handled = true;   // don't also open/preview the task row underneath
+        _vm.ActiveBucketId = "";   // "All buckets"
+        RefreshBucketCombo();      // keep the dropdown in sync with the change
+        _vm.ActiveTag = tag;
+        _vm.StatusText = $"Filtered to #{tag} (all buckets)";
+    }
+
+    /// <summary>Click the active-tag chip to clear the tag filter.</summary>
+    private void OnClearTag_Click(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        _vm.ActiveTag = "";
+        _vm.StatusText = "Tag filter cleared";
+    }
+
     private void OpenEditor(TaskItem task)
     {
         _previewPopup?.Hide();

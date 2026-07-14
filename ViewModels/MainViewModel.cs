@@ -62,6 +62,40 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     private string _activeFilter = "All";
+
+    private string _activeTag = "";
+    /// <summary>Active tag filter ("" = none). Deliberately spans ALL
+    /// buckets: a tag like "audit" is a cross-cutting concern, and
+    /// intersecting it with the bucket filter would usually return
+    /// nothing and look broken. Selecting a tag therefore also clears
+    /// the bucket filter (see the UI's tag-chip click handler).</summary>
+    public string ActiveTag
+    {
+        get => _activeTag;
+        set
+        {
+            var v = (value ?? "").Trim().TrimStart('#').ToLowerInvariant();
+            if (_activeTag == v) return;
+            _activeTag = v;
+            Notify();
+            Notify(nameof(HasActiveTag));
+            Notify(nameof(ActiveTagLabel));
+            RebuildVisible();
+        }
+    }
+    public bool HasActiveTag => _activeTag.Length > 0;
+    public string ActiveTagLabel => _activeTag.Length > 0 ? $"#{_activeTag}" : "";
+
+    /// <summary>Every tag in use across all non-archived tasks, sorted
+    /// by frequency then alphabetically — powers the tag picker.</summary>
+    public List<string> AllTagsInUse =>
+        Tasks.Where(t => !t.IsArchived)
+             .SelectMany(t => t.AllTags)
+             .GroupBy(x => x)
+             .OrderByDescending(g => g.Count())
+             .ThenBy(g => g.Key)
+             .Select(g => g.Key)
+             .ToList();
     /// <summary>Named filter: "All" / "Today" / "ThisWeek" / "Overdue" /
     /// "NoDate" / "Done". Drives RebuildVisible's section logic.</summary>
     public string ActiveFilter
@@ -569,6 +603,10 @@ public class MainViewModel : INotifyPropertyChanged
                 t.ParsedTags.Any(tag => tag.Contains(s)));
         }
 
+        // Filter: active tag (cross-bucket by design — see ActiveTag).
+        if (_activeTag.Length > 0)
+            pool = pool.Where(t => t.AllTags.Contains(_activeTag));
+
         // Sort: Done items always go to the bottom. Within the active
         // items, behavior depends on Settings.SortMode:
         //   • "Manual"  → respect SortOrder (set via drag-drop reorder).
@@ -591,6 +629,10 @@ public class MainViewModel : INotifyPropertyChanged
         }
         else if (Settings.SortMode == "Manual")
         {
+            // Manual mode leaves ordering entirely to the user's drag
+            // order — floating important tasks would silently fight the
+            // arrangement they just made by hand. The row's amber tint
+            // and ❗ still mark them.
             sorted = pool
                 .OrderBy(t => t.State == TaskState.Done ? 1 : 0)
                 .ThenBy(t => t.SortOrder == 0 ? int.MaxValue : t.SortOrder)
@@ -599,8 +641,13 @@ public class MainViewModel : INotifyPropertyChanged
         }
         else
         {
+            // Date sort: important tasks float to the top of the active
+            // group (still below nothing, still above everything else),
+            // then normal due-date ordering. Done stays at the bottom
+            // regardless — an important task that's finished is history.
             sorted = pool
                 .OrderBy(t => t.State == TaskState.Done ? 1 : 0)
+                .ThenByDescending(t => t.State != TaskState.Done && t.IsImportant)
                 .ThenBy(t => t.DueDate is null ? 1 : 0)
                 .ThenBy(t => t.DueDate ?? DateTime.MaxValue)
                 .ThenByDescending(t => t.CreatedAt);

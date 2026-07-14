@@ -13,7 +13,7 @@ public partial class App : Application
     /// title bar, status messages, and About dialogs. Keep them in sync
     /// when releasing.
     /// </summary>
-    public const string DisplayVersion = "1.2.0";
+    public const string DisplayVersion = "1.3.0";
 
     private static Mutex? _singleInstanceMutex;
     private bool _ownsMutex;

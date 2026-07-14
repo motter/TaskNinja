@@ -140,6 +140,42 @@ public class TaskDetailEditor
         RefreshStatePicker();
         stateRow.Children.Add(statePickerHost);
 
+        // Important flag — sits with Status because that's what it is: a
+        // second axis of "how does this task rank".
+        var importantCheck = new CheckBox
+        {
+            Content = "❗ Important",
+            IsChecked = task.IsImportant,
+            Foreground = (Brush)Application.Current.Resources["TextBrush"],
+            FontSize = 12,
+            Margin = new Thickness(0, 8, 0, 0),
+            ToolTip = "Tints the row, shows ❗, and floats the task to the top (except in Manual sort)",
+        };
+        stateRow.Children.Add(importantCheck);
+
+        // Tags — comma-separated. These merge with any inline #hashtags
+        // typed into the title, so both styles work and neither is a
+        // second source of truth (TaskItem.AllTags does the union).
+        stateRow.Children.Add(new TextBlock
+        {
+            Text = "Tags (comma-separated — #hashtags in the title count too)",
+            FontSize = 11,
+            Foreground = (Brush)Application.Current.Resources["SubTextBrush"],
+            Margin = new Thickness(0, 10, 0, 3),
+        });
+        var tagsBox = new TextBox
+        {
+            Text = string.Join(", ", task.Tags),
+            FontSize = 12,
+            Padding = new Thickness(6, 4, 6, 4),
+            Background = (Brush)Application.Current.Resources["PanelBrush"],
+            Foreground = (Brush)Application.Current.Resources["TextBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["BorderBrush"],
+            BorderThickness = new Thickness(1),
+            ToolTip = "e.g. audit, safety, vendor — click a tag chip on any row to filter by it",
+        };
+        stateRow.Children.Add(tagsBox);
+
         // ── Activity log ──────────────────────────────────────────────
         // Compact expander showing the task's state-change history.
         // Collapsed by default — most users don't need to see it. Click
@@ -404,22 +440,57 @@ public class TaskDetailEditor
                     Stretch = Stretch.UniformToFill,
                     Margin = new Thickness(0, 0, 4, 4),
                 };
+                // Shared removal path — used by the ✕ badge and right-click.
+                void RemoveThisAttachment()
+                {
+                    if (MessageBox.Show("Remove this attachment?", "Remove attachment",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                    workingAttachments.Remove(a);
+                    persistence.DeleteAttachment(a.FileName);
+                    RefreshAttachmentList();
+                }
+
                 var border = new Border
                 {
                     BorderBrush = (Brush)Application.Current.Resources["BorderBrush"],
                     BorderThickness = new Thickness(1),
                     Child = thumb,
                 };
-                border.MouseRightButtonDown += (_, _) =>
+                border.MouseRightButtonDown += (_, _) => RemoveThisAttachment();
+
+                // ✕ badge, top-right of the thumbnail. Removal was
+                // right-click-only, i.e. invisible — a destructive action
+                // nobody could find. The Grid stacks the badge over the
+                // thumbnail without disturbing the WrapPanel layout.
+                var cell = new Grid { Margin = new Thickness(0, 0, 6, 6) };
+                cell.Children.Add(border);
+                var delBadge = new Border
                 {
-                    if (MessageBox.Show("Remove this attachment?", "Remove attachment",
-                        MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    Background = new SolidColorBrush(Color.FromArgb(0xE0, 0xC0, 0x39, 0x2B)),
+                    CornerRadius = new CornerRadius(9),
+                    Width = 18,
+                    Height = 18,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(0, -6, -6, 0),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    ToolTip = "Remove this attachment",
+                    Child = new TextBlock
                     {
-                        workingAttachments.Remove(a);
-                        persistence.DeleteAttachment(a.FileName);
-                        RefreshAttachmentList();
-                    }
+                        Text = "✕",
+                        FontSize = 10,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = Brushes.White,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    },
                 };
+                delBadge.MouseLeftButtonUp += (_, me) =>
+                {
+                    me.Handled = true;   // don't also open the image
+                    RemoveThisAttachment();
+                };
+                cell.Children.Add(delBadge);
                 // Left-click opens the attachment full-size in the default
                 // image viewer — same behavior the preview popup has had.
                 // Previously the editor thumbnails were view-only (right-
@@ -440,8 +511,8 @@ public class TaskDetailEditor
                     catch { /* best-effort — viewer missing or file locked */ }
                 };
                 border.Cursor = System.Windows.Input.Cursors.Hand;
-                border.ToolTip = "Click to open • Right-click to remove";
-                wrap.Children.Add(border);
+                border.ToolTip = "Click to open • ✕ or right-click to remove";
+                wrap.Children.Add(cell);   // cell = thumbnail + ✕ badge
             }
             attachPanel.Children.Add(wrap);
         }
@@ -543,6 +614,14 @@ public class TaskDetailEditor
             }
             task.Attachments = workingAttachments;
             task.Subtasks = subtasksWorking;
+            task.IsImportant = importantCheck.IsChecked == true;
+            // Split on commas; the Tags setter lowercases, strips any
+            // leading #, dedupes, and caps at 8.
+            task.Tags = (tagsBox.Text ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .ToList();
             saved = true;
             dialog.DialogResult = true;
         };
