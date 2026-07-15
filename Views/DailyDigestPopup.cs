@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;   // Cursors (clickable rows)
 using System.Windows.Media;
 using TaskNinja.Models;
 using TaskNinja.ViewModels;
@@ -41,7 +42,21 @@ namespace TaskNinja.Views;
 /// </summary>
 public class DailyDigestPopup
 {
+    /// <summary>Close the digest if it's showing. Used when opening a
+    /// task from a row, so the editor isn't stacked behind the popup.</summary>
+    public static void CloseIfOpen()
+    {
+        _currentWindow?.Close();
+        _currentWindow = null;
+    }
+
     private static Window? _currentWindow;
+
+    /// <summary>Set by Show() for the life of the popup: opens a task in
+    /// the detail editor. BuildTaskRow is a static helper several layers
+    /// down, so a field beats threading the callback through every
+    /// signature. Cleared on close.</summary>
+    private static Action<TaskItem>? _openTask;
 
     /// <summary>
     /// Show the daily digest. If one is already on screen, brings it
@@ -50,8 +65,12 @@ public class DailyDigestPopup
     public static void Show(Window owner, MainViewModel vm,
         Action<DateTime?>? onRemindLater = null,
         Action? onDismissed = null,
-        Action? onShowSettings = null)
+        Action? onShowSettings = null,
+        Action<TaskItem>? onOpenTask = null)
     {
+        // Stash the open-task callback for BuildTaskRow (a static helper
+        // several layers down). Cleared when the window closes.
+        _openTask = onOpenTask;
         if (_currentWindow is not null)
         {
             _currentWindow.Activate();
@@ -86,7 +105,7 @@ public class DailyDigestPopup
             Topmost = true,
         };
         _currentWindow = win;
-        win.Closed += (_, _) => _currentWindow = null;
+        win.Closed += (_, _) => { _currentWindow = null; _openTask = null; };
 
         // Outer chrome — rounded border to match the main window
         var chrome = new Border
@@ -351,6 +370,17 @@ public class DailyDigestPopup
             Margin = new Thickness(0, 2, 0, 0),
         });
         Grid.SetColumn(leftStack, 0);
+        // Click the title/meta area to open the task in the editor. The
+        // action buttons on the right keep their own clicks (they're in
+        // a different column and set e.Handled), so quick-triage still
+        // works without opening anything.
+        if (_openTask is not null)
+        {
+            leftStack.Background = Brushes.Transparent;  // make whitespace hit-testable
+            leftStack.Cursor = Cursors.Hand;
+            leftStack.ToolTip = "Click to open this task";
+            leftStack.MouseLeftButtonUp += (_, _) => _openTask?.Invoke(task);
+        }
         grid.Children.Add(leftStack);
 
         // Right side: action buttons

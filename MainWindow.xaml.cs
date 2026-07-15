@@ -167,7 +167,14 @@ public partial class MainWindow : Window
             onDismissed: updateLastShownOnDismiss
                 ? () => _notifications?.MarkShownToday()
                 : null,
-            onShowSettings: OpenSettingsDialog);
+            onShowSettings: OpenSettingsDialog,
+            onOpenTask: task =>
+            {
+                // Close the digest first so the editor isn't stacked
+                // behind the topmost popup, then open the task.
+                DailyDigestPopup.CloseIfOpen();
+                OpenEditor(task);
+            });
     }
 
     /// <summary>Open the settings modal. Persists settings on Save.

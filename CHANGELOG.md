@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.2] — 2026-07-14
+
+### Added — open a task from the Daily Summary
+Click a task's title/meta area in the daily digest to open it in the
+detail editor — for when you're reviewing and want to see or change
+more than the quick ✓/snooze actions offer. The digest closes as the
+editor opens. The action buttons on the right still do their thing
+without opening anything.
+
 ## [1.3.1] — 2026-07-14
 
 ### Fixed — v1.3.0 failed to build (no release was produced)
