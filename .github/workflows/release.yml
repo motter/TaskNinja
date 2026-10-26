@@ -1,0 +1,57 @@
+# Builds and publishes TaskNinja on every version tag push.
+#
+# Release flow (see RELEASING.md):
+#   1. Bump <Version> in TaskNinja.csproj AND DisplayVersion in
+#      App.xaml.cs (keep them matching), commit.
+#   2. git tag v1.1.1 && git push --tags
+#   3. This workflow publishes the self-contained single-file exe,
+#      zips it, and attaches it to a GitHub Release for that tag.
+#   4. Running TaskNinja installs see the new release via the in-app
+#      updater (Settings → Updates, tray menu, or the startup check).
+#
+# The in-app updater downloads the .zip asset, extracts the exe, and
+# swaps itself (keeping a .bak of the outgoing version). Keep the
+# asset a PUBLISHED build — never a source zip.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write   # create the release + upload assets
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          # Locate the project wherever it lives in the repo layout —
+          # root or a TaskNinja/ subfolder both work.
+          $proj = Get-ChildItem -Recurse -Filter TaskNinja.csproj | Select-Object -First 1
+          dotnet publish $proj.FullName -c Release -o publish_out
+        # PublishSingleFile / SelfContained / win-x64 all come from the
+        # csproj, so local VS publishes and CI publishes are identical.
+
+      - name: Zip the exe
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish_out/*.exe -DestinationPath TaskNinja-win-x64.zip
+
+      - name: Create GitHub Release with asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: TaskNinja-win-x64.zip
+          generate_release_notes: true

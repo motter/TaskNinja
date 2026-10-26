@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Desert palette — same one ClipNinja uses, kept identical so the
+         two apps feel like siblings on the desktop. -->
+
+    <!-- Backgrounds -->
+    <SolidColorBrush x:Key="BgBrush"           Color="#1F1A14" />  <!-- darkest base -->
+    <SolidColorBrush x:Key="PanelBrush"        Color="#2A2218" />  <!-- card surfaces -->
+    <SolidColorBrush x:Key="PanelLightBrush"   Color="#3A2F22" />  <!-- hover / selected -->
+    <SolidColorBrush x:Key="BorderBrush"       Color="#4A3D2D" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="TextBrush"         Color="#E8DCC4" />  <!-- cream -->
+    <SolidColorBrush x:Key="SubTextBrush"      Color="#A89876" />  <!-- muted cream -->
+    <SolidColorBrush x:Key="DimTextBrush"      Color="#776A52" />  <!-- placeholder -->
+
+    <!-- Accents -->
+    <SolidColorBrush x:Key="AccentBrush"       Color="#E8A04A" />  <!-- amber -->
+    <SolidColorBrush x:Key="AccentDimBrush"    Color="#8B6228" />
+    <SolidColorBrush x:Key="SageBrush"         Color="#A8CBA0" />  <!-- soft green for spreadsheets / progress -->
+    <SolidColorBrush x:Key="SkyBrush"          Color="#99AEB5" />  <!-- dusty sky blue for URLs -->
+
+    <!-- States -->
+    <SolidColorBrush x:Key="OverdueBrush"      Color="#D26666" />  <!-- red-ish overdue -->
+    <SolidColorBrush x:Key="TodayBrush"        Color="#E8A04A" />  <!-- amber for today -->
+    <SolidColorBrush x:Key="SoonBrush"         Color="#A8CBA0" />  <!-- soft green for soon -->
+    <SolidColorBrush x:Key="DoneBrush"         Color="#776A52" />  <!-- dim for done -->
+
+    <!-- Persona-specific glyph color for the TaskNinja scroll/checkmark -->
+    <SolidColorBrush x:Key="GlyphBrush"        Color="#E8A04A" />
+
+</ResourceDictionary>
